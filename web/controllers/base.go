@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"strings"
 	"yulong-hids/web/settings"
 	"yulong-hids/web/utils"
 
@@ -16,6 +17,17 @@ type BaseController struct {
 
 // Prepare access Control, 2FA, csrf check and other security options
 func (c *BaseController) Prepare() {
+
+	// check hostname
+	hostname := beego.AppConfig.String("ylhostname")
+	allowHosts := strings.Split(hostname, ",")
+	if hostname != "" && !utils.StringInSlice(c.Ctx.Input.Host(), allowHosts) {
+		beego.Error("Hostname not correct.")
+		c.Ctx.Output.SetStatus(403)
+		c.Data["json"] = "Forbidden"
+		c.ServeJSON()
+		return
+	}
 
 	// only https be allowed
 	HTTPSOnly, _ := beego.AppConfig.Bool("OnlyHTTPS")
@@ -41,7 +53,7 @@ func (c *BaseController) Prepare() {
 		tfaSwitch && !WatchModeExempt(c) &&
 		utils.FindSub(settings.AuthURILst, c.Ctx.Input.URL()) != "" {
 		serverside := utils.GetPassword(beego.AppConfig.String("TwoFactorAuthKey"))
-		beego.Info("GetPassword", serverside)
+		beego.Debug("GetPassword: ", serverside)
 		clientside, err := c.GetUint32("pass")
 		if err != nil || serverside != clientside {
 			c.Data["json"] = bson.M{"status": false, "msg": "验证密码为空或者验证密码不正确，请重新输入双因子验证密码"}
@@ -76,7 +88,7 @@ func (c *BaseController) Prepare() {
 		c.Ctx.Output.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	}
 
-	beego.Info("url:", c.Ctx.Request.URL)
+	beego.Info("Url:", c.Ctx.Request.RequestURI)
 }
 
 // Options : chrome "preflighted" requests first send an HTTP request by the OPTIONS method to the resource on the other domain

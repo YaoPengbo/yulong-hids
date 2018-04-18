@@ -72,7 +72,7 @@ func (c *NoticeController) ChangeStatus() {
 	} else if form.Id == "learn" {
 		// 学习模式的特殊情况
 		notice := cli.FindOne(bson.M{"type": form.Type, "info": form.Info})
-		beego.Debug(notice)
+		beego.Debug("Notice in learn mode:", notice)
 		nID := notice["_id"].(bson.ObjectId).Hex()
 		res = cli.ChangeStatusbyId(nID, 2)
 	} else {
@@ -94,6 +94,8 @@ func (c *NoticeController) ChangeStatus() {
 			if err != nil {
 				beego.Error("Model UpdateAll", err)
 				res = false
+			} else {
+				res = true
 			}
 		} else {
 			res = cli.ChangeStatusbyId(form.Id, form.Status)

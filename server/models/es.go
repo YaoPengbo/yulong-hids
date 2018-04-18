@@ -190,8 +190,22 @@ var connectionMapping = `
 	}
 }`
 
+// ESSave 插入es记录结构
+type ESSave struct {
+	IP   string            `json:"ip"`
+	Data map[string]string `json:"data"`
+	Time time.Time         `json:"time"`
+}
+
+type esData struct {
+	dataType string
+	data     ESSave
+}
+
 // Client http请求client
 var Client *elastic.Client
+
+var esChan chan esData
 var nowindicesName string
 
 func init() {
@@ -200,37 +214,39 @@ func init() {
 	var err error
 	Client, err = elastic.NewClient(elastic.SetURL("http://" + *es))
 	if err != nil {
-		log.Println(err.Error())
+		log.Println("Elastic NewClient error:", err.Error())
 		panic(1)
 	}
 	indexNameList, err := Client.IndexNames()
 	if err != nil {
-		log.Println(err.Error())
+		log.Println("Client IndexNames error:", err.Error())
 		return
 	}
 	if !inArray(indexNameList, nowindicesName, false) {
 		newIndex(nowindicesName)
 	}
+	esChan = make(chan esData, 2048)
 }
 
-// ESSave 插入es记录结构
-type ESSave struct {
-	IP   string            `json:"ip"`
-	Data map[string]string `json:"data"`
-	Time time.Time         `json:"time"`
+//InsertThread ES异步写入线程
+func InsertThread() {
+	var data esData
+	for {
+		data = <-esChan
+		_, err := Client.Index().
+			Index(nowindicesName).
+			Type(data.dataType).
+			BodyJson(data.data).
+			Do(context.Background())
+		if err != nil {
+			log.Println("insert es error: ", err)
+		}
+	}
 }
 
 // InsertEs 将数据插入es
-func InsertEs(dataType string, data ESSave) bool {
-	_, err := Client.Index().
-		Index(nowindicesName).
-		Type(dataType).
-		BodyJson(data).
-		Do(context.Background())
-	if err == nil {
-		return true
-	}
-	return false
+func InsertEs(dataType string, data ESSave) {
+	esChan <- esData{dataType, data}
 }
 
 func esCheckThread() {

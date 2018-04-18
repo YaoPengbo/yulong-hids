@@ -49,7 +49,7 @@ func (p *program) run() {
 			err = common.Cmd.Wait()
 			if err != nil {
 				common.AgentStatus = false
-				log.Println("agent to exit：", err.Error())
+				log.Println("Agent to exit：", err.Error())
 			}
 		} else {
 			log.Println("Startup Agent failed", err.Error())
@@ -79,7 +79,7 @@ func main() {
 	var err error
 	common.Service, err = service.New(prg, svcConfig)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println("New a service error:", err.Error())
 		return
 	}
 	if *uninstallBool {
@@ -98,7 +98,8 @@ func main() {
 			os.Mkdir(common.InstallPath, 0)
 			err = install.Dependency(common.ServerIP, common.InstallPath, common.Arch)
 			if err != nil {
-				log.Println(err.Error())
+				log.Println("Install dependency, service error:", err.Error())
+				return
 			}
 		}
 		if common.ServerIP == "" {
@@ -107,19 +108,20 @@ func main() {
 		}
 		err := install.Agent(common.ServerIP, common.InstallPath, common.Arch)
 		if err != nil {
-			log.Println(err.Error())
+			log.Println("Install agent error:", err.Error())
+			return
 		}
-		log.Println("Installed")
+		log.Println("Installed!")
 		return
 	}
 	// 安装daemon为服务
 	if *registeredBool {
 		err = common.Service.Install()
 		if err != nil {
-			log.Println(err.Error())
+			log.Println("Install daemon as service error:", err.Error())
 		} else {
 			if err = common.Service.Start(); err != nil {
-				log.Println(err.Error())
+				log.Println("Service start error:", err.Error())
 			} else {
 				log.Println("Install as a service", "ok")
 			}
@@ -128,6 +130,6 @@ func main() {
 	}
 	err = common.Service.Run()
 	if err != nil {
-		log.Println(err.Error())
+		log.Println("Service run error:", err.Error())
 	}
 }

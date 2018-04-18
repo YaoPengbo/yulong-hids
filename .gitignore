@@ -24,7 +24,26 @@
 /web/web
 /web/web_*
 
+/agent/agent
+/agent/agent.exe
+/agent/agent_*
+/daemon/daemon
+/daemon/daemon.exe
+/daemon/daemon_*
+/server/server
+/server/server.exe
+/server/server_*
+
+/bin/build_*
+
 experiments/
 .vscode/
+__pycache__
 
 .DS_Store
+
+/server/cert.pem
+/server/private.pem
+.gdb_history
+peda-session-web.txt
+mongodb_data/

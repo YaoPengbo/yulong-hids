@@ -164,6 +164,8 @@ func (c *InstallController) Post() {
 		}
 	}
 
+	beego.Error("Real step:", step)
+	beego.Error("Current step params:", currentStep)
 	c.Data["json"] = bson.M{"status": false, "msg": "error"}
 	c.ServeJSON()
 	return
@@ -214,7 +216,7 @@ func toConfig(iplst []interface{}, prolist []interface{}, certText interface{}) 
 func (c *InstallController) saveFile(system string, platform string) *models.CodeInfo {
 	if !utils.StringInSlice(system, settings.SystemArray) ||
 		!utils.StringInSlice(platform, settings.PlatformArray) {
-		beego.Info("文件上传参数错误")
+		beego.Error("文件上传参数错误")
 		return ErrorReturn()
 	}
 
